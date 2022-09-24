@@ -1,0 +1,10 @@
+package router
+
+import (
+	"github.com/gin-gonic/gin"
+  "{{.Module}}/src/service"
+)
+
+func InitGin(e *gin.Engine, s *service.Service) {
+	e.POST("/api/v1/users", s.CreateUser)
+}

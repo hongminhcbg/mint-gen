@@ -13,7 +13,7 @@ func gen(serviceName string) {
 		panic(err)
 	}
 
-	gen := service.New("templates/service-gin", serviceName, "github.com/x/"+serviceName)
+	gen := service.New("templates/service-gin-template", serviceName, serviceName)
 	err = gen.Gen(serviceName)
 	if err != nil {
 		panic(err)
