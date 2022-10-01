@@ -1,0 +1,6 @@
+server:
+  http_port: 8080
+  grpc_port:  10000
+my_sql_url: root:12345678@tcp(localhost:3306)/reliable_execution?charset=utf8mb4&collation=utf8mb4_unicode_ci&parseTime=True&loc=Local
+redis_url: redis://localhost:6379?read_timeout=30&pool_fifo=true&dial_timeout=10&write_timeout=30&pool_size=10&pool_timeout=30
+env: dev

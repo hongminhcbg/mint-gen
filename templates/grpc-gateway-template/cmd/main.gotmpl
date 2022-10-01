@@ -1,0 +1,135 @@
+package main
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"log"
+	"net"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
+	"{{.Module}}/api"
+	"{{.Module}}/config"
+	"{{.Module}}/src/service"
+
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/urfave/cli/v2"
+	"google.golang.org/grpc"
+)
+
+var cfg *config.Config
+
+func main() {
+	app := &cli.App{
+		Name: "service-name",
+		Commands: []*cli.Command{
+			{
+				Name:   "server",
+				Action: server,
+			},
+		},
+	}
+
+	var err error
+	cfg, err = config.Init()
+	if err != nil {
+		panic(err)
+	}
+
+	b, _ := json.MarshalIndent(cfg, "", "\t")
+	fmt.Println("running with config", string(b))
+	app.Commands = append(app.Commands, others()...)
+	if err := app.Run(os.Args); err != nil {
+		panic(err)
+	}
+}
+
+func others() []*cli.Command {
+	return []*cli.Command{
+		{
+			Name:  "hello",
+			Usage: "Hello world func",
+			Action: func(ctx *cli.Context) error {
+				fmt.Println("hi")
+				return nil
+			},
+		},
+	}
+}
+
+func startHttpServer(ctx context.Context, s *service.Service, middlerwares ...Middleware) error {
+	gmux := runtime.NewServeMux(
+		runtime.WithErrorHandler(CustomErrorHandler()),
+	)
+
+	err := api.RegisterServiceHandlerServer(ctx, gmux, s)
+	if err != nil {
+		panic(err)
+	}
+
+	var h http.Handler = gmux
+	for i := len(middlerwares) - 1; i >= 0; i-- {
+		h = middlerwares[i](h)
+	}
+
+	muxServer := http.NewServeMux()
+	muxServer.Handle("/", h)
+
+	gw := http.Server{
+		Addr:    fmt.Sprintf("0.0.0.0:%d", cfg.Server.HttpPort),
+		Handler: muxServer,
+	}
+
+	fmt.Println("starting http server at port: ", cfg.Server.HttpPort)
+	err = gw.ListenAndServe()
+	if err != nil {
+		panic("start http gateway error" + err.Error())
+	}
+
+	return nil
+}
+
+func startGrpcServer(ctx context.Context, s *service.Service) error {
+	log.Printf("starting grpc server at address %d\n", cfg.Server.GrpcPort)
+	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", cfg.Server.GrpcPort))
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
+
+	server := grpc.NewServer()
+	api.RegisterServiceServer(server, s)
+	err = server.Serve(lis)
+	if err != nil {
+		panic("start grpc gateway error" + err.Error())
+	}
+
+	return nil
+}
+
+func server(cCtx *cli.Context) error {
+	fmt.Println("Hello world")
+	s := newService()
+	go startHttpServer(cCtx.Context, s, ForwardHeader())
+	go startGrpcServer(cCtx.Context, s)
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL)
+
+	for {
+		select {
+		case <-sig:
+			{
+				fmt.Println("received signal stop")
+				time.Sleep(10 * time.Second)
+				os.Exit(0)
+			}
+		}
+	}
+}
+
+func newService() *service.Service {
+	return service.NewService(cfg)
+}

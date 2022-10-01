@@ -1,0 +1,10 @@
+package store
+
+import (
+	"context"
+	"{{.Module}}/src/models"
+)
+
+type IUser interface {
+	Create(ctx context.Context, r *models.User) error
+}

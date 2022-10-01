@@ -58,7 +58,8 @@ func (s *_service) genWithTmpl(path string, newExt string) error {
 
 	rawResult := bytes.NewBuffer([]byte{})
 	err = tmpl.Execute(rawResult, GenInput{
-		Module: s.module,
+		Module:  s.module,
+		Project: s.projectRootPath,
 	})
 
 	if err != nil {

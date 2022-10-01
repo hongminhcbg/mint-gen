@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package {{.Project}}.grpc_gateway.api;
+
+message CreateUserRequest {
+    string name = 1;
+    int32 age = 2;
+}
+
+message CreateUserResponse {
+    message Data {
+        int64 user_id = 1;
+    }
+
+    int32 code = 1;
+    string messsage = 2;
+    Data data = 3;
+}

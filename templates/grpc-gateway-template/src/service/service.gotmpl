@@ -1,0 +1,29 @@
+package service
+
+import (
+	"context"
+	"log"
+
+	"{{.Module}}/api"
+	"{{.Module}}/config"
+)
+
+type Service struct {
+	cfg *config.Config
+	api.UnimplementedServiceServer
+}
+
+func NewService(cfg *config.Config) *Service {
+	return &Service{cfg: cfg}
+}
+
+func (s *Service) CreateUser(ctx context.Context, req *api.CreateUserRequest) (*api.CreateUserResponse, error) {
+	log.Println("req = ", req)
+	return &api.CreateUserResponse{
+		Code:     1,
+		Messsage: "success",
+		Data: &api.CreateUserResponse_Data{
+			UserId: 1,
+		},
+	}, nil
+}
