@@ -1,5 +1,6 @@
 package service
 
 type GenInput struct {
-	Module string
+	Module  string
+	Project string
 }

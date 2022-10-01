@@ -1,0 +1,42 @@
+package main
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"google.golang.org/grpc/status"
+)
+
+type Middleware func(http.Handler) http.Handler
+
+func CustomErrorHandler() runtime.ErrorHandlerFunc {
+	return func(ctx context.Context, _ *runtime.ServeMux, _ runtime.Marshaler, w http.ResponseWriter, r *http.Request, err error) {
+		w.Header().Set("content-type", "application/json")
+		e, ok := status.FromError(err)
+		if !ok {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(`{"code": "500000", "message":"Internal server error"}`))
+			return
+		}
+
+		w.Write([]byte(fmt.Sprintf("{\"code\": %d, \"message\": \"%s\"}", e.Code(), e.Message())))
+	}
+}
+
+func ForwardHeader() Middleware {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			newHeader := make(http.Header, 2*len(r.Header))
+
+			for k, v := range r.Header {
+				newHeader.Set(k, v[0])
+				newHeader.Set(runtime.MetadataHeaderPrefix+k, v[0])
+			}
+
+			r.Header = newHeader
+			next.ServeHTTP(w, r)
+		})
+	}
+}

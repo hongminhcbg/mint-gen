@@ -1,0 +1,15 @@
+syntax = "proto3";
+package {{.Project}}.grpc_gateway.api;
+import "google/api/annotations.proto";
+import "user_model.proto";
+
+option go_package = "{{.Module}}/api";
+
+service Service {
+    rpc CreateUser(CreateUserRequest) returns (CreateUserResponse) {
+        option (google.api.http) = {
+          post: "/api/v1/users"
+          body: "*"
+        };
+   }
+}

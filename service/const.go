@@ -5,4 +5,6 @@ var tmplReplacer = map[string]string{
 	"md":     "md",
 	"tmpl":   "go",
 	"mod":    "mod",
+	"proto":  "proto",
+	"yaml":   "yaml",
 }

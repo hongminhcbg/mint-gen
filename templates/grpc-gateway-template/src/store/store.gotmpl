@@ -1,0 +1,10 @@
+package store
+
+import (
+	"gorm.io/gorm"
+)
+
+type Store struct {
+	*gorm.DB
+	User IUser
+}
