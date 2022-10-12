@@ -4,7 +4,10 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/go-logr/logr"
+	"github.com/go-logr/zapr"
 	"github.com/spf13/viper"
+	"go.uber.org/zap"
 )
 
 type Config struct {
@@ -31,4 +34,15 @@ func Init() (*Config, error) {
 		return nil, err
 	}
 	return cfg, nil
+}
+
+func (c *Config) InitLog() logr.Logger {
+	zc := zap.NewProductionConfig()
+	zc.Level = zap.NewAtomicLevelAt(zap.DebugLevel)
+	zc.DisableStacktrace = true
+	z, _ := zc.Build()
+	log := zapr.NewLogger(z)
+	log = log.WithName("{{.Project}}")
+
+	return log
 }
